@@ -168,6 +168,24 @@ provision:
     mkcert -install
     mkcert localhost
     chown -R nobody:nobody $CAROOT
+
+    # Get the hash of the newly installed certificate
+    CA_SERIAL=$(openssl x509 -in "${CAROOT}"/rootCA.pem -noout -serial | sed 's/serial=//' | xargs -I{} echo "ibase=16; {}" | bc)
+    CA_SUBJECT_HASH=$(openssl x509 -noout -subject_hash -in /usr/local/share/ca-certificates/mkcert_development_CA_"${CA_SERIAL}".crt)
+    # Remove old mkcert certificates
+    for cert in /usr/local/share/ca-certificates/mkcert_development_CA_*.crt; do
+      cert_name=$(basename "$cert")
+      if [ -f "$cert" ] && [ "$cert_name" != "mkcert_development_CA_${CA_SERIAL}.crt" ]; then
+        rm -f "$cert"
+      fi
+    done
+    rm -f /etc/ssl/certs/"${CA_SUBJECT_HASH}".*
+    # Remove any orphaned symlinks with old naming pattern
+    for symlink in /etc/ssl/certs/ca-cert-mkcert_development_CA_*.pem; do
+      if [ -L "$symlink" ] && [ ! -e "$symlink" ]; then
+        rm -f "$symlink"
+      fi
+    done
 - # Configure HTTPS_PROXY to OpenResty
   mode: system
   script: |
