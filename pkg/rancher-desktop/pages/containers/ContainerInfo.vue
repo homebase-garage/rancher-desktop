@@ -73,7 +73,7 @@
         ref="containerLogs"
         :container-id="containerId"
         :is-container-running="isRunning"
-        :namespace="settings?.containers?.namespace"
+        :namespace="namespace"
       />
     </div>
   </div>
@@ -104,6 +104,8 @@ const searchTerm = ref('');
 // Vuex integration
 const isK8sReady = computed(() => store.getters['k8sManager/isReady']);
 const containers = computed(() => store.state['container-engine'].containers);
+const supportsNamespaces = computed(() => store.getters['container-engine/supportsNamespaces']);
+const namespace = computed(() => supportsNamespaces.value ? settings.value?.containers?.namespace : undefined);
 
 // Computed properties
 const containerId = computed(() => route.params.id as string || '');
